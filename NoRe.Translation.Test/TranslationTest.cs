@@ -20,6 +20,7 @@ namespace NoRe.Translation.Test
             // Test if a word gets translated right
             Assert.AreEqual("Auto", Translator.Translate("Car"));
             Assert.AreEqual("Auto", "Car".Translate());
+            Assert.AreEqual("Fünf", 5.Translate());
         }
     }
 }
