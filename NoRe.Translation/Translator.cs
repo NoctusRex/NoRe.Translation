@@ -29,25 +29,53 @@ namespace NoRe.Translation
             if (TryGetTranslation(text, out string translation)) return translation;
 
             if (!Configuration.CollectMissingTranslation) return text;
-
-            if (!DatabaseQueries.ExistsLanguage(Configuration.Language)) DatabaseQueries.AddLanguage(Configuration.Language);
             if (!DatabaseQueries.ExistsText(text)) DatabaseQueries.AddUntranslatedText(text);
 
             return text;
         }
 
         /// <summary>
+        /// Translates a string and returns the original value when no translation is found
+        /// </summary>
+        /// <param name="text">the text to translate</param>
+        /// <param name="targetLanguage">the target language</param>
+        /// <returns>the translation</returns>
+        public static string Translate(string text, string targetLanguage)
+        {
+            string oldLanguage = Configuration.Language;
+
+            try
+            {
+                SetLanguage(targetLanguage, false);
+                return Translate(text);
+            }
+            finally
+            {
+                Configuration.Language = oldLanguage;
+            }
+        }
+
+        /// <summary>
         /// Loads the configuration, creates neccessary tables and loads translations into ram
         /// </summary>
-        public static void Initialize()
+        public static void Initialize(string translatorConfigurationPath = "", string databaseConfigurationPath = "")
         {
             try
             {
-                Configuration = new TranslatorConfiguration();
+                if (!string.IsNullOrEmpty(databaseConfigurationPath)) DatabaseQueries.DatabaseConfigurationPath = databaseConfigurationPath;
+
+                if (string.IsNullOrEmpty(translatorConfigurationPath))
+                {
+                    Configuration = new TranslatorConfiguration();
+                }
+                else
+                {
+                    Configuration = new TranslatorConfiguration(translatorConfigurationPath);
+                }
                 Configuration.Read();
 
                 if (!DatabaseQueries.ExistsTable()) DatabaseQueries.CreateTable();
-                if (Configuration.LoadToRam) Translations = DatabaseQueries.GetTranslations(Configuration.Language);
+                SetLanguage(Configuration.Language, false);
             }
             catch (Exception ex)
             {
@@ -55,6 +83,20 @@ namespace NoRe.Translation
                 throw ex;
             }
 
+        }
+
+        /// <summary>
+        /// Changes the currently selected language
+        /// </summary>
+        /// <param name="language"></param>
+        /// <param name="doWrite">Changes the config file if true</param>
+        public static void SetLanguage(string language, bool doWrite = true)
+        {
+            Configuration.Language = language;
+            if (doWrite) Configuration.Write();
+
+            if (!DatabaseQueries.ExistsLanguage(language)) DatabaseQueries.AddLanguage(language);
+            if (Configuration.LoadToRam) Translations = DatabaseQueries.GetTranslations(language);
         }
 
         /// <summary>

@@ -12,18 +12,19 @@ namespace NoRe.Translation
     internal static class DatabaseQueries
     {
         /// <summary>
-        /// The path where the database file is stored - TODO: Add to configuration
+        /// The path to the database configuration file
         /// </summary>
-        private static string DatabasePath { get; } = System.IO.Path.Combine(Pathmanager.ConfigurationDirectory, "TranslatorSqLiteConfiguration.xml");
+        public static string DatabaseConfigurationPath { get; set; } = System.IO.Path.Combine(Pathmanager.ConfigurationDirectory, "TranslatorSqLiteConfiguration.xml");
 
         /// <summary>
         /// Creates the table in the database where the translations will be stored
+        /// df = default
         /// </summary>
         public static void CreateTable()
         {
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
-                wrapper.ExecuteNonQuery("CREATE TABLE translations (id INTEGER PRIMARY KEY NOT NULL, textInDefaultLanguage TEXT NOT NULL)");
+                wrapper.ExecuteNonQuery("CREATE TABLE translations (id INTEGER PRIMARY KEY NOT NULL, df TEXT NOT NULL)");
             }
         }
 
@@ -33,7 +34,7 @@ namespace NoRe.Translation
         /// <param name="language">Will be added as new column</param>
         public static void AddLanguage(string language)
         {
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
                 wrapper.ExecuteNonQuery($"ALTER TABLE translations ADD {language} TEXT");
             }
@@ -46,7 +47,7 @@ namespace NoRe.Translation
         /// <returns>true if exists</returns>
         public static bool ExistsLanguage(string language)
         {
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
                 return wrapper.ExecuteScalar<Int64>("SELECT COUNT(*) AS CNTREC FROM pragma_table_info(@0) WHERE name = @1", "translations", language) > 0;
             }
@@ -58,22 +59,22 @@ namespace NoRe.Translation
         /// <returns>true if exists</returns>
         public static bool ExistsTable()
         {
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
                 return wrapper.ExecuteScalar<Int64>("SELECT COUNT(name) FROM sqlite_master WHERE type=@0 AND name=@1", "table", "translations") > 0;
             }
         }
 
         /// <summary>
-        /// Checks if a default translation already exists
+        /// Checks if a df translation already exists
         /// </summary>
         /// <param name="text">text to check</param>
         /// <returns>true if exists</returns>
         public static bool ExistsText(string text)
         {
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
-                return wrapper.ExecuteScalar<Int64>("SELECT COUNT(textInDefaultLanguage) FROM translations WHERE textInDefaultLanguage=@0", text) > 0;
+                return wrapper.ExecuteScalar<Int64>("SELECT COUNT(df) FROM translations WHERE df=@0", text) > 0;
             }
         }
 
@@ -88,9 +89,9 @@ namespace NoRe.Translation
         {
             translation = text;
 
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
-                Table Table = wrapper.ExecuteReader("SELECT * FROM translations WHERE textInDefaultLanguage = @0", text);
+                Table Table = wrapper.ExecuteReader("SELECT * FROM translations WHERE df = @0", text);
 
                 if (Table.Rows.Count == 0) return false;
                 if (string.IsNullOrEmpty(Table.GetValue<string>(0, language))) return false;
@@ -110,11 +111,11 @@ namespace NoRe.Translation
         {
             Dictionary<string, string> result = new Dictionary<string, string>();
 
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
                 wrapper.ExecuteReader("SELECT * FROM translations").Rows.ForEach(row => 
                 {
-                    result.Add(row.GetValue<string>("textInDefaultLanguage"), TryGetString(row.GetValue<object>(targetLanguage)));
+                    result.Add(row.GetValue<string>("df"), TryGetString(row.GetValue<object>(targetLanguage)));
                 });
             }
 
@@ -124,12 +125,12 @@ namespace NoRe.Translation
         /// <summary>
         /// Adds a not translated text to the translations table
         /// </summary>
-        /// <param name="text">The text that will be added into 'textInDefaultLanguage' column</param>
+        /// <param name="text">The text that will be added into 'df' column</param>
         public static void AddUntranslatedText(string text)
         {
-            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabasePath))
+            using (SqLiteWrapper wrapper = new SqLiteWrapper(DatabaseConfigurationPath))
             {
-                wrapper.ExecuteNonQuery("INSERT INTO translations (textInDefaultLanguage) VALUES(@0)", text);
+                wrapper.ExecuteNonQuery("INSERT INTO translations (df) VALUES(@0)", text);
             }
         }
 

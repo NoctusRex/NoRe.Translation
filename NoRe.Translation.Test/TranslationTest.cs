@@ -22,5 +22,26 @@ namespace NoRe.Translation.Test
             Assert.AreEqual("Auto", "Car".Translate());
             Assert.AreEqual("Fünf", 5.Translate());
         }
+
+        [TestMethod]
+        public void TestSetLanguage()
+        {
+            Translator.SetLanguage("df");
+            TranslatorConfiguration tf = new TranslatorConfiguration();
+            tf.Read();
+            Assert.AreEqual("df", tf.Language);
+
+            Assert.AreEqual("Car", Translator.Translate("Car"));
+
+            Assert.AreEqual("Auto", Translator.Translate("Car", "DE"));
+            Assert.AreEqual("Auto", "Car".Translate("DE"));
+            tf.Read();
+            Assert.AreEqual("df", tf.Language);
+
+            Translator.SetLanguage("DE");
+            tf.Read();
+            Assert.AreEqual("DE", tf.Language);
+        }
+
     }
 }

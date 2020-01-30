@@ -10,7 +10,7 @@ namespace NoRe.Translation
         /// <summary>
         /// The target language the text will be translated to
         /// All text can be used as language
-        /// Use 'textInDefaultLanguage' to get the original text and do no translation
+        /// Use 'df' to get the original text and do no translation
         /// </summary>
         public string Language { get; set; }
         /// <summary>
@@ -23,6 +23,7 @@ namespace NoRe.Translation
         public bool CollectMissingTranslation { get; set; }
 
         public TranslatorConfiguration() : base(System.IO.Path.Combine(Pathmanager.ConfigurationDirectory, "TranslatorConfiguration.xml")) { }
+        public TranslatorConfiguration(string path): base(path) { }
 
         public override void Read()
         {
